@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earth: Day / Night Blend — NASA Imagery</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #0b0e14; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+  .panel {
+    position: absolute; z-index: 1000; left: 50%; transform: translateX(-50%);
+    bottom: 24px; width: min(520px, 92vw);
+    background: rgba(15,18,26,0.88); color: #e8ecf3; border-radius: 14px;
+    padding: 14px 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+  }
+  .panel h1 { font-size: 14px; margin: 0 0 8px; font-weight: 600; letter-spacing: 0.02em; opacity: 0.85; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row span { font-size: 12px; opacity: 0.7; width: 34px; text-align: center; }
+  input[type="range"] { flex: 1; accent-color: #6ea8ff; }
+  #apod {
+    position: absolute; z-index: 1000; top: 16px; right: 16px; width: 200px;
+    background: rgba(15,18,26,0.88); color: #e8ecf3; border-radius: 12px;
+    padding: 10px; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    display: none;
+  }
+  #apod img { width: 100%; border-radius: 8px; display: block; margin-bottom: 6px; }
+  #apod.show { display: block; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="panel">
+  <h1>DAY ☀️ — NIGHT 🌙</h1>
+  <div class="row">
+    <span>Day</span>
+    <input type="range" id="slider" min="0" max="100" value="35">
+    <span>Night</span>
+  </div>
+</div>
+
+<div id="apod"></div>
+
+<!-- Optional local config with your NASA API key. Not committed to git (see .gitignore). -->
+<script src="config.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  // --- Base map ---
+  const map = L.map('map', { worldCopyJump: true, minZoom: 2, maxZoom: 8 }).setView([20, 0], 3);
+
+  // NASA GIBS (Global Imagery Browse Services) — no API key required for these tile layers.
+  const dayLayer = L.tileLayer(
+    'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/2004-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg',
+    { attribution: 'NASA EOSDIS GIBS — Blue Marble', maxNativeZoom: 8 }
+  ).addTo(map);
+
+  const nightLayer = L.tileLayer(
+    'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_CityLights_2012/default/2012-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg',
+    { attribution: 'NASA EOSDIS GIBS — VIIRS City Lights (Black Marble)', maxNativeZoom: 8, opacity: 0.35 }
+  ).addTo(map);
+
+  const slider = document.getElementById('slider');
+  slider.addEventListener('input', () => {
+    nightLayer.setOpacity(slider.value / 100);
+  });
+
+  // --- Optional bonus: NASA Astronomy Picture of the Day, using your local API key ---
+  async function loadApod() {
+    if (typeof window.NASA_API_KEY !== 'string' || !window.NASA_API_KEY || window.NASA_API_KEY.includes('YOUR_API_KEY')) {
+      return; // no key configured locally — skip silently
+    }
+    try {
+      const res = await fetch(`https://api.nasa.gov/planetary/apod?api_key=${window.NASA_API_KEY}`);
+      if (!res.ok) throw new Error('APOD request failed');
+      const data = await res.json();
+      const box = document.getElementById('apod');
+      if (data.media_type === 'image') {
+        box.innerHTML = `<img src="${data.url}" alt=""><strong>${data.title}</strong>`;
+        box.classList.add('show');
+      }
+    } catch (e) {
+      console.warn('NASA APOD bonus panel unavailable:', e.message);
+    }
+  }
+  loadApod();
+</script>
+</body>
+</html>
