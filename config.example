@@ -1,0 +1,5 @@
+// 1. Copy this file and rename the copy to "config.js"
+// 2. Paste your NASA API key below (get one free at https://api.nasa.gov)
+// 3. "config.js" is listed in .gitignore, so it will NOT be pushed to GitHub.
+
+window.NASA_API_KEY = "ZSHlKZCWrzGtrJaQqhM6tWupF15Yb5MrC4FjYyAa"
